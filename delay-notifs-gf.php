@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-if( in_array( 'gravityforms/gravityforms.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
+if( in_array( 'gravityforms/gravityforms.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) && class_exists( 'GFAddOn' ) ) {
 
     define( 'GFDNVER', '1.1' );
     define( 'GFDNPATH', plugin_dir_path( __FILE__ ) );
@@ -53,6 +53,26 @@ if( in_array( 'gravityforms/gravityforms.php', apply_filters( 'active_plugins', 
         flush_rewrite_rules();
     }
     register_uninstall_hook( __FILE__, __NAMESPACE__ . '\gfdn_deactivate_uninstall' );
+
+} else {
+
+    $active_plugins = get_option( 'active_plugins' );
+
+    $deactivate = 0;
+
+    foreach( $active_plugins as $key => $active_plugin ) {
+
+        if( $active_plugin == 'delay-notifs-gf/delay-notifs-gf.php' ) {
+            unset( $active_plugins[ $key ] );
+            $deactivate = 1;
+            break;
+        }
+
+    }
+
+    if( $deactivate ) {
+        update_option( 'active_plugins', $active_plugins, true );
+    }
 
 }
 ?>
