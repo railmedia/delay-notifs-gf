@@ -23,7 +23,7 @@ function gfdn_plugin_info( $res, $action, $args ) {
 	}
 
 	// do nothing if it is not our plugin
-	if( plugin_basename( SCHCDBASE ) !== $args->slug ) {
+	if( plugin_basename( GFDNBASE ) !== $args->slug ) {
 		return false;
 	}
 
