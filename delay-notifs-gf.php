@@ -26,30 +26,33 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'GFDNVER', '1.1' );
-define( 'GFDNPATH', plugin_dir_path( __FILE__ ) );
-define( 'GFDNBASE', plugin_basename( __FILE__ ) );
-define( 'GFDNURL', plugin_dir_url( __FILE__ ) );
-define( 'GFDNVERS', '1.0.0' );
+if( in_array( 'gravityforms/gravityforms.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
 
-load_plugin_textdomain( 'delay-notifs-gf', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
+    define( 'GFDNVER', '1.1' );
+    define( 'GFDNPATH', plugin_dir_path( __FILE__ ) );
+    define( 'GFDNBASE', plugin_basename( __FILE__ ) );
+    define( 'GFDNURL', plugin_dir_url( __FILE__ ) );
+    define( 'GFDNVERS', '1.0.0' );
 
-require_once( __DIR__ . '/inc/init.php' );
+    load_plugin_textdomain( 'delay-notifs-gf', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
 
-require_once( __DIR__ . '/inc/install.php' );
+    require_once( __DIR__ . '/inc/init.php' );
 
-function gfdn_activate_install() {
-    gfdn_install();
-    flush_rewrite_rules();
+    require_once( __DIR__ . '/inc/install.php' );
+
+    function gfdn_activate_install() {
+        gfdn_install();
+        flush_rewrite_rules();
+    }
+    register_activation_hook( __FILE__, __NAMESPACE__ . '\gfdn_activate_install' );
+
+    require_once( __DIR__ . '/inc/uninstall.php' );
+
+    function gfdn_deactivate_uninstall() {
+        gfdn_uninstall();
+        flush_rewrite_rules();
+    }
+    register_uninstall_hook( __FILE__, __NAMESPACE__ . '\gfdn_deactivate_uninstall' );
+
 }
-register_activation_hook( __FILE__, __NAMESPACE__ . '\gfdn_activate_install' );
-
-require_once( __DIR__ . '/inc/uninstall.php' );
-
-function gfdn_deactivate_uninstall() {
-    gfdn_uninstall();
-    flush_rewrite_rules();
-}
-register_uninstall_hook( __FILE__, __NAMESPACE__ . '\gfdn_deactivate_uninstall' );
-
 ?>
