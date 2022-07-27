@@ -1,0 +1,46 @@
+#gfdn-delay-types label {
+    margin-right: 20px;
+}
+#gfdn-delay-settings,
+#gfdn-date-settings {
+    border-left: 2px solid #ecedf8;
+    margin: 15px 0 0 10px;
+    padding: 0 0 0 15px;
+}
+#gfdn-delay-settings input {
+    width: 80px;
+    margin-left: 10px;
+}
+#gfdn-delay-settings select {
+    width: 160px;
+}
+#gfdn-delay-settings select[name="_gform_setting_delayOffsetUnit"] {
+    position: relative;
+    top: -2px;
+}
+#gfdn-date-settings input {
+    width: 128px;
+    margin-left: 10px;
+}
+#gfdn-date-settings select {
+    width: 80px;
+    margin-left: 0;
+}
+#gfdn-date-settings select:first-child {
+    margin-left: 10px;
+}
+#gfdn-delayDate-icon {
+    position: relative;
+    top: 1px;
+    margin: 0 20px 0 -27px;
+    opacity: .5;
+    pointer-events: none;
+}
+#gfdn-repeat {
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+}
+#gfdn-repeat #gfdn-repeat-section {
+    margin-left: 10px;
+}
