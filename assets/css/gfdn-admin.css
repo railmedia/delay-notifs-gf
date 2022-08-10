@@ -2,7 +2,8 @@
     margin-right: 20px;
 }
 #gfdn-delay-settings,
-#gfdn-date-settings {
+#gfdn-date-settings,
+#gfdn-repeat-section {
     border-left: 2px solid #ecedf8;
     margin: 15px 0 0 10px;
     padding: 0 0 0 15px;
@@ -37,8 +38,8 @@
     pointer-events: none;
 }
 #gfdn-repeat {
-    display: flex;
-    align-items: center;
+    /* display: flex;
+    align-items: center; */
     margin: 10px 0;
 }
 #gfdn-repeat #gfdn-repeat-section {

@@ -16,10 +16,16 @@
                 jQuery('#gfdn-repeat-section').hide();
             }
 
-            if( jQuery('input[name="_gform_setting_delayType"]:checked').val() != 'none' ) {
-                jQuery('#gfdn-repeat').show();
+            if( jQuery('input[name="_gform_setting_delayType"]:checked').val() == 'delay' ) {
+                jQuery('#gfdn-repeat-delay').show();
             } else {
-                jQuery('#gfdn-repeat').hide();
+                jQuery('#gfdn-repeat-delay').hide();
+            }
+
+            if( jQuery('input[name="_gform_setting_delayType"]:checked').val() == 'date' ) {
+                jQuery('#gfdn-repeat-date').show();
+            } else {
+                jQuery('#gfdn-repeat-date').hide();
             }
 
         },
@@ -30,10 +36,16 @@
             let value = option.val();
             jQuery('#gfdn-' + value + '-settings').show();
 
-            if( value != 'none' ) {
-                jQuery('#gfdn-repeat').show();
+            if( value == 'delay' ) {
+                jQuery('#gfdn-repeat-delay').show();
             } else {
-                jQuery('#gfdn-repeat').hide();
+                jQuery('#gfdn-repeat-delay').hide();
+            }
+
+            if( value == 'date' ) {
+                jQuery('#gfdn-repeat-date').show();
+            } else {
+                jQuery('#gfdn-repeat-date').hide();
             }
 
         },
