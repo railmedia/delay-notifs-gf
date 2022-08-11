@@ -311,6 +311,22 @@ class GFDN_GravityForms {
 
                     case 'date':
 
+                        //Add main notif
+
+                        $wpdb->insert(
+                            $wpdb->prefix . 'gfdn_notifs',
+                            array(
+                                'form_id'         => $entry['form_id'],
+                                'entry_id'        => $entry['id'],
+                                'notification_id' => $notification['id'],
+                                'config'          => serialize( array(
+                                    'send' => $send_notif_delay['delay'],
+                                    'data' => $send_notif_delay['delay_data']
+                                ) )
+                            )
+                        );
+
+                        //Add repeats notifs
                         if( isset( $send_notif_delay['delay_data']['repeats'] ) && $send_notif_delay['delay_data']['repeats'] ) {
 
                             foreach( $send_notif_delay['delay_data']['repeats'] as $repeat ) {
