@@ -1,0 +1,9 @@
+<h4>1.1.0 - 11 August 2022</h4>
+<ul>
+    <li>Feature - added notification delay at specific date</li>
+    <li>Feature - it is now possible to define multiple future dates at which the same notification will be sent</li>
+</ul>
+<h4>1.0.0 - 27 July 2022</h4>
+<ul>
+    <li>Initial release</li>
+</ul>
