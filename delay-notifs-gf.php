@@ -3,7 +3,7 @@
 * Plugin Name: Delay Notifications for Gravity Forms
 * Plugin URI: https://www.cloudweb.ch
 * Description: Provides extended functionality for Gravity Forms notifications in terms of delaying the notifications sent by the plugin
-* Version: 1.0.0
+* Version: 1.1.0
 * Author: Adrian Emil Tudorache
 * Author URI: https://www.tudorache.me
 * Text Domain: delay-notifs-gf

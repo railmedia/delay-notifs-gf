@@ -45,3 +45,14 @@
 #gfdn-repeat #gfdn-repeat-section {
     margin-left: 10px;
 }
+
+#gfdn-repeat .add-repeat-by-date {
+    margin: 15px 0;
+}
+
+#gfdn-repeat .remove-repeat-by-date {
+    color: red;
+    cursor: pointer;
+    font-size: 20px;
+    margin-left: 10px;
+}

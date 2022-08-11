@@ -4,11 +4,7 @@
 
         init: function() {
 
-            jQuery('.gfdn-datepicker').each(function(i, dp){
-                jQuery(this).datepicker({
-                    dateFormat: 'yy-mm-dd'
-    		    });
-            });
+            this.initDatepickers();
 
             if( jQuery('#gfdn-enable-repeat').is(':checked') ) {
                 jQuery('#gfdn-repeat-section').show();
@@ -27,6 +23,15 @@
             } else {
                 jQuery('#gfdn-repeat-date').hide();
             }
+
+        },
+        initDatepickers: function() {
+
+            jQuery('.gfdn-datepicker').each(function(i, dp){
+                jQuery(this).datepicker({
+                    dateFormat: 'yy-mm-dd'
+    		    });
+            });
 
         },
         onDelayTypeChange: function( option ) {
@@ -57,6 +62,19 @@
                 jQuery('#gfdn-repeat-section').hide();
             }
 
+        },
+        addNewRepeatByDateFieldsSet: function() {
+            if( gfdnAdm.ndbd ) {
+                jQuery('#gfdn-repeat-date-entries').append( gfdnAdm.ndbd );
+                this.initDatepickers();
+            }
+        },
+        removeRepeatByDateFieldsSet: function( row ) {
+
+            if( confirm( gfdnAdm.s.cdde ) === true ) {
+                row.parents('.gfdn-repeat-date-entry').remove();
+            }
+
         }
 
     }
@@ -71,6 +89,15 @@
 
         jQuery('#gfdn-enable-repeat').on('change', function(){
             GFDNAdmin.onEnableRepeatChange( jQuery(this) );
+        });
+
+        jQuery('#gfdn-add-repeat-by-date').on('click', function(e){
+            e.preventDefault();
+            GFDNAdmin.addNewRepeatByDateFieldsSet( jQuery(this) );
+        });
+
+        jQuery('body').on('click', '.remove-repeat-by-date', function(){
+            GFDNAdmin.removeRepeatByDateFieldsSet( jQuery(this) );
         });
 
     });

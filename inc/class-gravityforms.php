@@ -187,50 +187,95 @@ class GFDN_GravityForms {
 
             $send_notif_delay = $this->get_notification_delay( $notification );
 
-            if(
-                $send_notif_delay &&
-                isset( $send_notif_delay['delay_data']['repeat'] ) &&
-                $send_notif_delay['delay_data']['repeat'] &&
-                isset( $notification['delayRepeatTimes'] ) &&
-                $notification['delayRepeatTimes']
-            ) {
+            if( $send_notif_delay ) {
 
-                $notif_config = $get_delayed_notification[0]->config ? unserialize( $get_delayed_notification[0]->config ) : array();
+                switch( $send_notif_delay['delay_data']['type'] ) {
 
-                if( $notif_config && $notif_config['sent'] + 1 >= $send_notif_delay['delay_data']['repeat'] ) {
+                    case 'delay':
 
-                    //Delete notif as repeat times has been fulfilled
+                        if(
+                            isset( $send_notif_delay['delay_data']['repeats'] ) &&
+                            $send_notif_delay['delay_data']['repeats'] &&
+                            isset( $notification['delayRepeatTimes'] ) &&
+                            $notification['delayRepeatTimes']
+                        ) {
 
-                    $wpdb->delete(
-                        $wpdb->prefix . 'gfdn_notifs',
-                        array(
-                            'id' => $get_delayed_notification[0]->id
-                        )
-                    );
+                            $notif_config = $get_delayed_notification[0]->config ? unserialize( $get_delayed_notification[0]->config ) : array();
 
-                } else {
+                            if( $notif_config && $notif_config['sent'] + 1 >= $send_notif_delay['delay_data']['repeat'] ) {
 
-                    //Update notif and reschedule delay
+                                //Delete notif as repeat times has been fulfilled
 
-                    $wpdb->update(
-                        $wpdb->prefix . 'gfdn_notifs',
-                        array(
-                            'config' => serialize( array(
-                                'send' => $send_notif_delay['delay'],
-                                'data' => $send_notif_delay['delay_data'],
-                                'sent' => $notif_config ? $notif_config['sent'] + 1 : 1
-                            ) )
-                        ),
-                        array(
-                            'form_id'         => $entry['form_id'],
-                            'entry_id'        => $entry['id'],
-                            'notification_id' => $notification['id'],
-                        )
-                    );
+                                $wpdb->delete(
+                                    $wpdb->prefix . 'gfdn_notifs',
+                                    array(
+                                        'id' => $get_delayed_notification[0]->id
+                                    )
+                                );
+
+                            } else {
+
+                                //Update notif and reschedule delay
+
+                                $wpdb->update(
+                                    $wpdb->prefix . 'gfdn_notifs',
+                                    array(
+                                        'config' => serialize( array(
+                                            'send' => $send_notif_delay['delay'],
+                                            'data' => $send_notif_delay['delay_data'],
+                                            'sent' => $notif_config ? $notif_config['sent'] + 1 : 1
+                                        ) )
+                                    ),
+                                    array(
+                                        'form_id'         => $entry['form_id'],
+                                        'entry_id'        => $entry['id'],
+                                        'notification_id' => $notification['id'],
+                                    )
+                                );
+
+                            }
+
+                            //Send email
+                            return $email;
+
+                        }
+
+                    break;
+                    case 'date':
+
+                        if( isset( $send_notif_delay['delay_data']['repeats'] ) && $send_notif_delay['delay_data']['repeats'] ) {
+
+                            //If there are any defined repeats, check expired ones
+
+                            $form_notifs = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}gfdn_notifs WHERE form_id={$entry['form_id']} AND entry_id={$entry['id']} AND notification_id='{$notification['id']}'" );
+                            if( $form_notifs ) {
+
+                                foreach( $form_notifs as $notif ) {
+
+                                    $config = $notif->config ? unserialize( $notif->config ) : null;
+                                    if( $config && strtotime( $config['send'] ) <= time() ) {
+
+                                        $wpdb->delete(
+                                            $wpdb->prefix . 'gfdn_notifs',
+                                            array(
+                                                'id' => $notif->id
+                                            )
+                                        );
+
+                                    }
+
+                                }
+
+                            }
+
+                        }
+
+                        //Send email
+                        return $email;
+
+                    break;
 
                 }
-
-                return $email;
 
             }
 
@@ -241,19 +286,57 @@ class GFDN_GravityForms {
             global $wpdb;
 
             $send_notif_delay = $this->get_notification_delay( $notification );
-            $wpdb->insert(
-                $wpdb->prefix . 'gfdn_notifs',
-                array(
-                    'form_id'         => $entry['form_id'],
-                    'entry_id'        => $entry['id'],
-                    'notification_id' => $notification['id'],
-                    'config'          => serialize( array(
-                        'send' => $send_notif_delay['delay'],
-                        'data' => $send_notif_delay['delay_data'],
-                        'sent' => 0
-                    ) )
-                )
-            );
+
+            if( $send_notif_delay ) {
+
+                switch( $send_notif_delay['delay_data']['type'] ) {
+
+                    case 'delay':
+
+                        $wpdb->insert(
+                            $wpdb->prefix . 'gfdn_notifs',
+                            array(
+                                'form_id'         => $entry['form_id'],
+                                'entry_id'        => $entry['id'],
+                                'notification_id' => $notification['id'],
+                                'config'          => serialize( array(
+                                    'send' => $send_notif_delay['delay'],
+                                    'data' => $send_notif_delay['delay_data'],
+                                    'sent' => 0
+                                ) )
+                            )
+                        );
+
+                    break;
+
+                    case 'date':
+
+                        if( isset( $send_notif_delay['delay_data']['repeats'] ) && $send_notif_delay['delay_data']['repeats'] ) {
+
+                            foreach( $send_notif_delay['delay_data']['repeats'] as $repeat ) {
+
+                                $wpdb->insert(
+                                    $wpdb->prefix . 'gfdn_notifs',
+                                    array(
+                                        'form_id'         => $entry['form_id'],
+                                        'entry_id'        => $entry['id'],
+                                        'notification_id' => $notification['id'],
+                                        'config'          => serialize( array(
+                                            'send' => sprintf( '%s %s:%s:00 %s', $repeat['date'], $repeat['hour'], $repeat['minute'], $repeat['ampm'] ),
+                                            'data' => $send_notif_delay['delay_data']
+                                        ) )
+                                    )
+                                );
+
+                            }
+
+                        }
+
+                    break;
+
+                }
+
+            }
 
         }
 
@@ -276,6 +359,8 @@ class GFDN_GravityForms {
         $delay_data = array();
         $delay = 'none';
 
+        $repeat = isset( $notification['delayEnableRepeat'] ) && $notification['delayEnableRepeat'] ? 1 : 0;
+
         switch( $notification['delayType'] ) {
 
             case 'delay':
@@ -295,15 +380,22 @@ class GFDN_GravityForms {
 
                 }
 
+                $repeat_times = isset( $notification['delayRepeatTimes'] ) && $notification['delayRepeatTimes'] ? $notification['delayRepeatTimes'] : 0;
+
+                if( $repeat && $repeat_times ) {
+                    $delay_data['repeats'] = $repeat_times;
+                }
+
             break;
             case 'date':
 
                 $delay_date = isset( $notification['delayDate'] ) && $notification['delayDate'] ? $notification['delayDate'] : 0;
-                $delay_hour = isset( $notification['delayHour'] ) && $notification['delayHour'] ? $notification['delayHour'] : 0;
+                $delay_hour = isset( $notification['delayHour'] ) && $notification['delayHour'] ? $notification['delayHour'] : 12;
                 $delay_min  = isset( $notification['delayMinute'] ) && $notification['delayMinute'] ? $notification['delayMinute'] : 0;
                 $delay_ampm = isset( $notification['delayAmPm'] ) && $notification['delayAmPm'] ? $notification['delayAmPm'] : 0;
 
-                if( $delay_date && $delay_hour && $delay_min && $delay_ampm ) {
+                if( $delay_date ) {
+
                     $delay = sprintf( '%s %s:%s:00 %s', $delay_date, $delay_hour, $delay_min, $delay_ampm );
 
                     $delay_data = array(
@@ -313,17 +405,31 @@ class GFDN_GravityForms {
                         'min'  => $delay_min,
                         'ampm' => $delay_ampm
                     );
+
+                }
+
+                if( isset( $notification['delayRepeatDate'] ) && $notification['delayRepeatDate'] ) {
+
+                    $repeats = array();
+                    foreach( $notification['delayRepeatDate'] as $i => $date ) {
+
+                        $repeats[] = array(
+                            'date'   => $date,
+                            'hour'   => isset( $notification['delayRepeatHour'][$i] ) && $notification['delayRepeatHour'][$i] ? $notification['delayRepeatHour'][$i] : '12',
+                            'minute' => isset( $notification['delayRepeatMinute'][$i] ) && $notification['delayRepeatMinute'][$i] ? $notification['delayRepeatMinute'][$i] : '00',
+                            'ampm'   => isset( $notification['delayRepeatAmPm'][$i] ) && $notification['delayRepeatAmPm'][$i] ? $notification['delayRepeatAmPm'][$i] : 'am'
+                        );
+
+                    }
+
+                    if( $repeat && $repeats ) {
+                        $delay_data['repeats'] = $repeats;
+                    }
+
                 }
 
             break;
 
-        }
-
-        $repeat = isset( $notification['delayEnableRepeat'] ) && $notification['delayEnableRepeat'] ? 1 : 0;
-        $repeat_times = isset( $notification['delayRepeatTimes'] ) && $notification['delayRepeatTimes'] ? $notification['delayRepeatTimes'] : 0;
-
-        if( $repeat && $repeat_times ) {
-            $delay_data['repeat'] = $repeat_times;
         }
 
         return array(
@@ -394,9 +500,16 @@ class GFDN_GravityForms {
         }
 
         if( ! $errors ) {
+
+            wp_enqueue_style( 'gfdn-admin', GFDNURL . 'assets/css/gfdn-admin.css' );
             wp_enqueue_script( 'jquery-ui-datepicker' );
             wp_enqueue_script( 'gfdn-admin', GFDNURL . 'assets/js/gfdn-admin.js', array( 'jquery' ), null, true );
-            wp_enqueue_style( 'gfdn-admin', GFDNURL . 'assets/css/gfdn-admin.css' );
+            wp_localize_script( 'gfdn-admin', 'gfdnAdm', array(
+                'ndbd' => \GFDN_Service::get_repeat_by_date_fields(),
+                's'    => array(
+                    'cdde' => __( 'Are you sure you wish to delete?', 'delay-notifs-gf' )
+                )
+            ));
         }
 
     }

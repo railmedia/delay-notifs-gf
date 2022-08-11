@@ -16,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Set includes
 $files = array(
+    'class-service.php'      => array(),
     'class-gravityforms.php' => array(),
     'updates.php'            => array()
 );
