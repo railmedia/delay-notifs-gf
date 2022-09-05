@@ -5,6 +5,7 @@
         init: function() {
 
             this.initDatepickers();
+            this.onCronJobTypeChange( jQuery('#gform_setting_type select#type') );
 
             if( jQuery('#gfdn-enable-repeat').is(':checked') ) {
                 jQuery('#gfdn-repeat-section').show();
@@ -75,6 +76,20 @@
                 row.parents('.gfdn-repeat-date-entry').remove();
             }
 
+        },
+        onCronJobTypeChange: function( select ) {
+
+            console.log(select.val());
+
+            switch( select.val() ) {
+                case 'local':
+                    jQuery('#gform_setting_interval').show();
+                break;
+                case 'remote':
+                    jQuery('#gform_setting_interval').hide();
+                break;
+            }
+
         }
 
     }
@@ -98,6 +113,10 @@
 
         jQuery('body').on('click', '.remove-repeat-by-date', function(){
             GFDNAdmin.removeRepeatByDateFieldsSet( jQuery(this) );
+        });
+
+        jQuery('body').on('change', '#gform_setting_type select#type', function(){
+            GFDNAdmin.onCronJobTypeChange( jQuery(this) );
         });
 
     });

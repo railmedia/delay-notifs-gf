@@ -52,64 +52,6 @@ class GFDN_GravityForms {
     }
 
     /**
-	 * Check if the next run date and time matches the current time
-	 *
-	 * @return boolean
-	 */
-    function decide_run() {
-
-        $interval = get_option( 'gravityformsaddon_delay-notifs-gf_settings' );
-        $interval = $interval && $interval['interval'] ? $interval['interval'] : 'one_second';
-
-        $next_run = get_option( 'gfdn_cron_next' );
-
-        $next_run_schedule = '';
-
-        switch( $interval ) {
-
-            case 'one_second':
-                $next_run_schedule = date( 'Y-m-d h:i:s a', strtotime( '+1 second' ) );
-            break;
-            case 'one_minute':
-                $next_run_schedule = date( 'Y-m-d h:i:s a', strtotime( '+1 minute' ) );
-            break;
-            case 'five_minutes': default:
-                $next_run_schedule = date( 'Y-m-d h:i:s a', strtotime( '+5 minutes' ) );
-            break;
-            case 'ten_minutes':
-                $next_run_schedule = date( 'Y-m-d h:i:s a', strtotime( '+10 minutes' ) );
-            break;
-            case 'half_hour':
-                $next_run_schedule = date( 'Y-m-d h:i:s a', strtotime( '+30 minutes' ) );
-            break;
-            case 'hourly':
-                $next_run_schedule = date( 'Y-m-d h:i:s a', strtotime( '+60 minutes' ) );
-            break;
-            case 'twicedaily':
-                $next_run_schedule = date( 'Y-m-d h:i:s a', strtotime( '+12 hours' ) );
-            break;
-            case 'daily':
-                $next_run_schedule = date( 'Y-m-d h:i:s a', strtotime( '+1 day' ) );
-            break;
-            case 'weekly':
-                $next_run_schedule = date( 'Y-m-d h:i:s a', strtotime( '+7 days' ) );
-            break;
-
-        }
-
-        if( ! $next_run || strtotime( $next_run ) < time() ) {
-
-            update_option( 'gfdn_cron_next', $next_run_schedule, true );
-
-            return true;
-
-        }
-
-        return false;
-
-    }
-
-    /**
 	 * If the next cron job is due, get the existing notifications and send them
 	 * afterwards reschedule or delete them
      *
@@ -117,45 +59,7 @@ class GFDN_GravityForms {
 	 */
     function send_notifications_cron() {
 
-        $run = $this->decide_run();
-
-        if( $run ) {
-
-            global $wpdb;
-
-            $get_notifs = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}gfdn_notifs" );
-            if( $get_notifs ) {
-
-                $send_notifs = $notifs_ids = array();
-                foreach( $get_notifs as $notif ) {
-
-                    $config = $notif->config;
-                    $config = $config ? unserialize( $config ) : array();
-
-                    if( $config && $config['send'] && ( strtotime( $config['send'] ) <= time() ) ) {
-                        $send_notifs[] = (array) $notif;
-                        if( ! in_array( $notif->notification_id, $notifs_ids ) ) {
-                            $notifs_ids[] = $notif->notification_id;
-                        }
-                    }
-
-                }
-
-                if( $send_notifs && $notifs_ids ) {
-
-                    foreach( $send_notifs as $notif ) {
-
-                        $form = \GFAPI::get_form( $notif['form_id'] );
-                        $entry= \GFAPI::get_entry( $notif['entry_id'] );
-                        \GFCommon::send_notifications( $notifs_ids, $form, $entry, true, 'delay' );
-
-                    }
-
-                }
-
-            }
-
-        }
+        \GFDN_Service::send_notifications_cron();
 
     }
 
@@ -493,29 +397,43 @@ class GFDN_GravityForms {
     public function scripts() {
 
         //Check if user is on the correspondig page. Eg.: /admin.php?page=gf_edit_forms&view=settings&subview=notification&id=<id>&nid=<hash>
-        $errors = 0;
 
-        $conditions = array(
-            'page'      => 'gf_edit_forms',
-            'view'      => 'settings',
-            'subview'   => 'notification',
-            'id'        => 'exists'
+        $pages = array(
+            'gf_edit_forms' => array(
+                // 'page'      => 'gf_edit_forms',
+                'view'      => 'settings',
+                'subview'   => 'notification',
+                'id'        => 'exists'
+            ),
+            'gf_settings' => array(
+                // 'page'      => 'gf_settings',
+                'subview'   => 'delay-notifs-gf'
+            )
         );
-        foreach( $conditions as $get => $value ) {
 
-            if( $value == 'exists' ) {
-                if( ! isset( $_GET[ $get ] ) ) {
+        if( isset( $_GET['page'] ) && isset( $pages[ $_GET['page'] ] ) ) {
+
+            $errors = 0;
+
+            $conditions = $pages[ $_GET['page'] ];
+
+            foreach( $conditions as $get => $value ) {
+
+                if( $value == 'exists' ) {
+                    if( ! isset( $_GET[ $get ] ) ) {
+                        $errors = 1;
+                        break;
+                    }
+                } elseif( ! isset( $_GET[ $get ] ) || $_GET[ $get ] != $value ) {
                     $errors = 1;
                     break;
                 }
-            } elseif( ! isset( $_GET[ $get ] ) || ! $_GET[ $get ] == $value ) {
-                $errors = 1;
-                break;
+
             }
 
         }
 
-        if( ! $errors ) {
+        if( isset( $errors ) && ! $errors ) {
 
             wp_enqueue_style( 'gfdn-admin', GFDNURL . 'assets/css/gfdn-admin.css' );
             wp_enqueue_script( 'jquery-ui-datepicker' );
@@ -739,15 +657,39 @@ class GFDN_GravityForms_AddOn extends \GFAddOn {
 	 */
     public function plugin_settings_fields() {
 
+        $settings = get_option( 'gravityformsaddon_delay-notifs-gf_settings' );
         $next_run = get_option( 'gfdn_cron_next' );
-        $desc     = $next_run ? sprintf( 'The next cron will run at %s', '<strong>' . date('d.m.Y - H:i:s', strtotime( $next_run ) ) ) . '</strong>' : '';
+        $desc     = '';
+        if( $settings['type'] == 'local' && $next_run ) {
+            $desc = sprintf( __( 'The next cron will run at %s', 'delay-notifs-gf'), '<strong>' . date('d.m.Y - H:i:s', strtotime( $next_run ) ) . '</strong>' );
+        }
+        if( $settings['type'] == 'remote' ) {
+            $desc = sprintf( __( 'Send a GET request to %s/wp-json/gfdn/v1/rcj', 'delay-notifs-gf' ), site_url() );
+        }
 
 		return array(
 			array(
 				'title'         => esc_html__( 'Notifications delay settings', 'delay-notifs-gf' ),
 				'save_callback' => function () {},
-				'description'   => $desc ? $desc : esc_html__( 'The cron has not been ran yet.', 'delay-notifs-gf' ),
+				'description'   => $desc,
 				'fields'        => array(
+                    array(
+                        'name'                => 'type',
+                        'tooltip'             => esc_html__( 'Set the type of cron job you would like the notifications cron job to run at.', 'delay-notifs-gf' ),
+                        'label'               => esc_html__( 'Cron job type', 'delay-notifs-gf' ),
+                        'type'                => 'select',
+                        'class'               => 'medium',
+                        'choices'             => array(
+							array(
+								'label'   => esc_html__( 'Local site cron', 'delay-notifs-gf' ),
+								'value'   => 'local'
+							),
+                            array(
+								'label'   => esc_html__( 'Remote site cron', 'delay-notifs-gf' ),
+								'value'   => 'remote'
+							),
+                        )
+                    ),
                     array(
                         'name'                => 'interval',
                         'tooltip'             => esc_html__( 'Set the time interval you would like the notifications cron job to run at.', 'delay-notifs-gf' ),

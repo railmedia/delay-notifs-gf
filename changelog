@@ -1,3 +1,8 @@
+<h4>1.2.0 - 05 September 2022</h4>
+<ul>
+    <li>Feature - configured REST API to allow for remote cron jobs calls</li>
+    <li>Feature - added option in Gravity Forms settings -> Notifications Delay to choose between remote and local cron job</li>
+</ul>
 <h4>1.1.1 - 11 August 2022</h4>
 <ul>
     <li>Fix - for date delayed notifications, the main notification was not added</li>

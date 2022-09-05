@@ -16,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Set includes
 $files = array(
+    'class-rest.php'         => array( 'GF_Delay_Notifs\GFDN_REST' ),
     'class-service.php'      => array(),
     'class-gravityforms.php' => array(),
     'updates.php'            => array()

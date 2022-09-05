@@ -10,6 +10,119 @@
 
 class GFDN_Service {
 
+    /**
+	 * Check if the next run date and time matches the current time
+	 *
+	 * @return boolean
+	 */
+    public static function decide_run() {
+
+        $settings = get_option( 'gravityformsaddon_delay-notifs-gf_settings' );
+        // var_dump($settings);
+        if( isset( $settings['type'] ) && $settings['type'] == 'remote' ) {
+            return true;
+        }
+
+        $interval = $settings && $settings['interval'] ? $settings['interval'] : 'one_second';
+
+        $next_run = get_option( 'gfdn_cron_next' );
+
+        $next_run_schedule = '';
+
+        switch( $interval ) {
+
+            case 'one_second':
+                $next_run_schedule = date( 'Y-m-d h:i:s a', strtotime( '+1 second' ) );
+            break;
+            case 'one_minute':
+                $next_run_schedule = date( 'Y-m-d h:i:s a', strtotime( '+1 minute' ) );
+            break;
+            case 'five_minutes': default:
+                $next_run_schedule = date( 'Y-m-d h:i:s a', strtotime( '+5 minutes' ) );
+            break;
+            case 'ten_minutes':
+                $next_run_schedule = date( 'Y-m-d h:i:s a', strtotime( '+10 minutes' ) );
+            break;
+            case 'half_hour':
+                $next_run_schedule = date( 'Y-m-d h:i:s a', strtotime( '+30 minutes' ) );
+            break;
+            case 'hourly':
+                $next_run_schedule = date( 'Y-m-d h:i:s a', strtotime( '+60 minutes' ) );
+            break;
+            case 'twicedaily':
+                $next_run_schedule = date( 'Y-m-d h:i:s a', strtotime( '+12 hours' ) );
+            break;
+            case 'daily':
+                $next_run_schedule = date( 'Y-m-d h:i:s a', strtotime( '+1 day' ) );
+            break;
+            case 'weekly':
+                $next_run_schedule = date( 'Y-m-d h:i:s a', strtotime( '+7 days' ) );
+            break;
+
+        }
+
+        if( ! $next_run || strtotime( $next_run ) < time() ) {
+
+            update_option( 'gfdn_cron_next', $next_run_schedule, true );
+
+            return true;
+
+        }
+
+        return false;
+
+    }
+
+    /**
+	 * If the next cron job is due, get the existing notifications and send them
+	 * afterwards reschedule or delete them
+     *
+	 * @return void
+	 */
+    public static function send_notifications_cron() {
+
+        $run = self::decide_run();
+
+        if( $run ) {
+
+            global $wpdb;
+
+            $get_notifs = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}gfdn_notifs" );
+            if( $get_notifs ) {
+
+                $send_notifs = $notifs_ids = array();
+                foreach( $get_notifs as $notif ) {
+
+                    $config = $notif->config;
+                    $config = $config ? unserialize( $config ) : array();
+
+                    if( $config && $config['send'] && ( strtotime( $config['send'] ) <= time() ) ) {
+                        $send_notifs[] = (array) $notif;
+                        if( ! in_array( $notif->notification_id, $notifs_ids ) ) {
+                            $notifs_ids[] = $notif->notification_id;
+                        }
+                    }
+
+                }
+
+                if( $send_notifs && $notifs_ids ) {
+
+                    foreach( $send_notifs as $notif ) {
+
+                        $form = \GFAPI::get_form( $notif['form_id'] );
+                        $entry= \GFAPI::get_entry( $notif['entry_id'] );
+                        \GFCommon::send_notifications( $notifs_ids, $form, $entry, true, 'delay' );
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    }
+
     public static function get_repeat_by_date_fields( $notification = null, $i = 0 ) {
 
         ob_start();
@@ -52,7 +165,7 @@ class GFDN_Service {
         </select>
 
         <span class="remove-repeat-by-date dashicons dashicons-trash"></span>
-        
+
     </div>
     <?php
         return ob_get_clean();
