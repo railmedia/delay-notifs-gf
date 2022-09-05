@@ -43,10 +43,11 @@ class GFDN_REST {
 
     function run_cron_job( $request ) {
 
-        \GFDN_Service::send_notifications_cron();
+        $sent = \GFDN_Service::send_notifications_cron();
 
         return new \WP_REST_Response( array(
             'msg' => 'Sent',
+            'sent' => $sent
         ) );
 
     }

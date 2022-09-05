@@ -47,7 +47,7 @@ class GFDN_GravityForms {
 
         add_filter( 'gform_pre_send_email', array( $this, 'prevent_email_send_schedule_notif' ), 10, 4 );
 
-        add_action( 'wp', array( $this, 'send_notifications_cron' ) );
+        // add_action( 'wp', array( $this, 'send_notifications_cron' ) );
 
     }
 
@@ -106,7 +106,7 @@ class GFDN_GravityForms {
 
                             $notif_config = $get_delayed_notification[0]->config ? unserialize( $get_delayed_notification[0]->config ) : array();
 
-                            if( $notif_config && $notif_config['sent'] + 1 >= $send_notif_delay['delay_data']['repeat'] ) {
+                            if( $notif_config && $notif_config['sent'] + 1 > $send_notif_delay['delay_data']['repeats'] ) {
 
                                 //Delete notif as repeat times has been fulfilled
 
@@ -498,6 +498,7 @@ class GFDN_GravityForms {
 		}
 
 		return $choices;
+
 	}
 
     /**

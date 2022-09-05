@@ -82,7 +82,7 @@ class GFDN_Settings_Field_Delay extends Gravity_Forms\Gravity_Forms\Settings\Fie
 					<select name="_gform_setting_delayMinute">
 						<?php
 						foreach ( range( 0, 55, 5 ) as $value ) {
-							printf( '<option value="%s" %s>%s</option>', $value, selected( rgar( $notification, 'delayMinute', 0 ), $value, false ), str_pad( $value, 2, '0', STR_PAD_LEFT ) );
+							printf( '<option value="%s" %s>%s</option>', $value < 10 ? 0 . $value : $value, selected( rgar( $notification, 'delayMinute', 0 ), $value, false ), str_pad( $value, 2, '0', STR_PAD_LEFT ) );
 						}
 						?>
 					</select>

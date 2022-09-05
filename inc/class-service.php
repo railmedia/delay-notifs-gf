@@ -112,6 +112,8 @@ class GFDN_Service {
                         $form = \GFAPI::get_form( $notif['form_id'] );
                         $entry= \GFAPI::get_entry( $notif['entry_id'] );
                         \GFCommon::send_notifications( $notifs_ids, $form, $entry, true, 'delay' );
+                        // $notifs_sent = $notifs_sent + 1;
+                        // $notifs_ids[] = $notifs_ids;
 
                     }
 
@@ -120,6 +122,12 @@ class GFDN_Service {
             }
 
         }
+
+        return array(
+            'run' => $run,
+            'send_notifs' => $send_notifs,
+            'notifs_ids' => $notifs_ids
+        );
 
     }
 
@@ -151,7 +159,7 @@ class GFDN_Service {
         <select name="_gform_setting_delayRepeatMinute[]">
             <?php
             foreach ( range( 0, 55, 5 ) as $value ) {
-                printf( '<option value="%s" %s>%s</option>', $value, isset( $notification['delayRepeatMinute'][$i] ) && $notification['delayRepeatMinute'][$i] == $value ? 'selected="selected"' : '', str_pad( $value, 2, '0', STR_PAD_LEFT ) );
+                printf( '<option value="%s" %s>%s</option>', $value < 10 ? 0 . $value : $value, isset( $notification['delayRepeatMinute'][$i] ) && $notification['delayRepeatMinute'][$i] == $value ? 'selected="selected"' : '', str_pad( $value, 2, '0', STR_PAD_LEFT ) );
             }
             ?>
         </select>
