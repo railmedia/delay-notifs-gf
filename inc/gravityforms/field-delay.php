@@ -31,6 +31,8 @@ class GFDN_Settings_Field_Delay extends Gravity_Forms\Gravity_Forms\Settings\Fie
 
         require_once( GFDNPATH . 'inc/class-service.php' );
 
+        global $wpdb;
+
 		$form         = $this->settings->get_current_form();
 		$notification = $this->settings->get_current_values();
 		$type         = rgars( $notification, 'delayType', 'none' );
@@ -127,11 +129,68 @@ class GFDN_Settings_Field_Delay extends Gravity_Forms\Gravity_Forms\Settings\Fie
 
                 </div>
 
+                <?php
+                    $notifs = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}gfdn_notifs WHERE form_id={$form['id']} AND notification_id='{$notification['id']}'" );
+
+                    if( $notifs ) {
+                ?>
+                <div id="gfdn-notifications-schedule">
+                    <!-- <input type="checkbox" id="gfdn-enable-repeat" name="_gform_setting_delayEnableRepeat" value="1" <?php //echo $notification['delayEnableRepeat'] ? 'checked="checked"' : ''; ?> /> -->
+                    <span class="dashicons dashicons-arrow-down-alt2 gfdn-notifications-schedule-section-toggle"></span>
+                    <label for="gfdn-notifications-schedule-section-toggle">
+                        <?php _e( 'Notifications schedule', 'delay-notifs-gf' ); ?></label> <?php gform_tooltip( 'delay_notif_schedule' ); ?>
+                    </label>
+
+                    <div id="gfdn-notifications-schedule-section" class="gpns-notification-schedule-setting" style="display:none;">
+                        <p><strong><?php printf( __( 'Current server time: %s', 'delay-notifs-gf' ), date('Y-m-d h:i:s a') ); ?></strong></p>
+                        <table class="wp-list-table widefat fixed striped table-view-list">
+                            <thead>
+                                <tr>
+                                    <th scope="col"><?php _e( 'Type', 'delay-notifs-gf' ); ?></th>
+                                    <th scope="col"><?php _e( 'Next send date/time', 'delay-notifs-gf' ); ?></th>
+                                    <th scope="col"><?php _e( 'Repeat', 'delay-notifs-gf' ); ?></th>
+                                    <th scope="col"><?php _e( 'Sent', 'delay-notifs-gf' ); ?></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <?php
+                                foreach( $notifs as $notif ) {
+                                    $config = $notif->config ? unserialize( $notif->config ) : array();
+
+                                    if( ! $config )
+                                        continue;
+                            ?>
+                            <tr>
+                                <th scope="col"><?php echo ucfirst( $notif->notification_type ); ?></th>
+                                <th scope="col"><?php echo $config['send']; ?></th>
+                                <th scope="col"><?php echo $config['data']['repeats'] ? $config['data']['repeats'] : '-'; ?></th>
+                                <th scope="col"><?php echo $config['sent'] ? $config['sent'] : '-'; ?></th>
+                            </tr>
+                            <?php
+
+                                }
+                            ?>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th scope="col"><?php _e( 'Type', 'delay-notifs-gf' ); ?></th>
+                                    <th scope="col"><?php _e( 'Send date/time', 'delay-notifs-gf' ); ?></th>
+                                    <th scope="col"><?php _e( 'Repeat', 'delay-notifs-gf' ); ?></th>
+                                    <th scope="col"><?php _e( 'Sent', 'delay-notifs-gf' ); ?></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                <?php } ?>
+
 			</td>
 		</tr>
 		<?php
+
 		return ob_get_clean();
-	}
+
+    }
 
 }
 

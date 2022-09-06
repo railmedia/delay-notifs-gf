@@ -90,6 +90,12 @@
                 break;
             }
 
+        },
+        notificationsScheduleSectionToggle: function() {
+
+            jQuery('.dashicons.gfdn-notifications-schedule-section-toggle').toggleClass('dashicons-arrow-up-alt2');
+            jQuery('#gfdn-notifications-schedule-section').slideToggle();
+
         }
 
     }
@@ -117,6 +123,10 @@
 
         jQuery('body').on('change', '#gform_setting_type select#type', function(){
             GFDNAdmin.onCronJobTypeChange( jQuery(this) );
+        });
+
+        jQuery('body').on('click', '.gfdn-notifications-schedule-section-toggle, label[for="gfdn-notifications-schedule-section-toggle"]', function(){
+            GFDNAdmin.notificationsScheduleSectionToggle( jQuery(this) );
         });
 
     });

@@ -12,6 +12,11 @@ class GFDN_REST {
 
     function __construct() {
         add_action( 'rest_api_init', array( $this, 'routes' ) );
+        add_action( 'wp', array( $this, 'test' ) );
+    }
+
+    function test() {
+        \GFDN_Service::send_notifications_cron();
     }
 
     function routes() {
