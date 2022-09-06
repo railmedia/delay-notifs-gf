@@ -83,9 +83,9 @@ class GFDN_GravityForms {
 
         global $wpdb;
 
-        $get_delayed_notification = $this->get_scheduled_delayed_notification( $notification, $entry );
+        $get_delayed_notifications = $this->get_scheduled_delayed_notification( $notification, $entry, 'all' );
 
-        if( $get_delayed_notification ) {
+        if( $get_delayed_notifications ) {
 
             //Check notif, send it and reschedule if conditions are met.
 
@@ -104,38 +104,45 @@ class GFDN_GravityForms {
                             $notification['delayRepeatTimes']
                         ) {
 
-                            $notif_config = $get_delayed_notification[0]->config ? unserialize( $get_delayed_notification[0]->config ) : array();
+                            $get_delayed_notification = $this->get_scheduled_delayed_notification( $notification, $entry, 'delay' );
 
-                            if( $notif_config && $notif_config['sent'] + 1 > $send_notif_delay['delay_data']['repeats'] ) {
+                            foreach( $get_delayed_notification as $notif ) {
 
-                                //Delete notif as repeat times has been fulfilled
+                                $notif_config = $notif->config ? unserialize( $notif->config ) : array();
 
-                                $wpdb->delete(
-                                    $wpdb->prefix . 'gfdn_notifs',
-                                    array(
-                                        'id' => $get_delayed_notification[0]->id
-                                    )
-                                );
+                                if( $notif_config && $notif_config['sent'] + 1 >= $send_notif_delay['delay_data']['repeats'] ) {
 
-                            } else {
+                                    //Delete notif as repeat times has been fulfilled
 
-                                //Update notif and reschedule delay
+                                    $wpdb->delete(
+                                        $wpdb->prefix . 'gfdn_notifs',
+                                        array(
+                                            'id' => $notif->id
+                                        )
+                                    );
 
-                                $wpdb->update(
-                                    $wpdb->prefix . 'gfdn_notifs',
-                                    array(
-                                        'config' => serialize( array(
-                                            'send' => $send_notif_delay['delay'],
-                                            'data' => $send_notif_delay['delay_data'],
-                                            'sent' => $notif_config ? $notif_config['sent'] + 1 : 1
-                                        ) )
-                                    ),
-                                    array(
-                                        'form_id'         => $entry['form_id'],
-                                        'entry_id'        => $entry['id'],
-                                        'notification_id' => $notification['id'],
-                                    )
-                                );
+                                } else {
+
+                                    //Update notif and reschedule delay
+
+                                    $wpdb->update(
+                                        $wpdb->prefix . 'gfdn_notifs',
+                                        array(
+                                            'config' => serialize( array(
+                                                'send' => $send_notif_delay['delay'],
+                                                'data' => $send_notif_delay['delay_data'],
+                                                'sent' => $notif_config ? $notif_config['sent'] + 1 : 1
+                                            ) )
+                                        ),
+                                        array(
+                                            'id'              => $notif->id,
+                                            'form_id'         => $entry['form_id'],
+                                            'entry_id'        => $entry['id'],
+                                            'notification_id' => $notification['id'],
+                                        )
+                                    );
+
+                                }
 
                             }
 
@@ -147,28 +154,21 @@ class GFDN_GravityForms {
                     break;
                     case 'date':
 
-                        if( isset( $send_notif_delay['delay_data']['repeats'] ) && $send_notif_delay['delay_data']['repeats'] ) {
+                        $get_delayed_notification = $this->get_scheduled_delayed_notification( $notification, $entry, 'date' );
 
-                            //If there are any defined repeats, check expired ones
+                        foreach( $get_delayed_notification as $notif ) {
 
-                            $form_notifs = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}gfdn_notifs WHERE form_id={$entry['form_id']} AND entry_id={$entry['id']} AND notification_id='{$notification['id']}'" );
-                            if( $form_notifs ) {
+                            $notif_config = $notif->config ? unserialize( $notif->config ) : array();
 
-                                foreach( $form_notifs as $notif ) {
 
-                                    $config = $notif->config ? unserialize( $notif->config ) : null;
-                                    if( $config && strtotime( $config['send'] ) <= time() ) {
+                            if( $notif_config && strtotime( $notif_config['send'] ) <= time() ) {
 
-                                        $wpdb->delete(
-                                            $wpdb->prefix . 'gfdn_notifs',
-                                            array(
-                                                'id' => $notif->id
-                                            )
-                                        );
-
-                                    }
-
-                                }
+                                $wpdb->delete(
+                                    $wpdb->prefix . 'gfdn_notifs',
+                                    array(
+                                        'id' => $notif->id
+                                    )
+                                );
 
                             }
 
@@ -203,6 +203,7 @@ class GFDN_GravityForms {
                                 'form_id'         => $entry['form_id'],
                                 'entry_id'        => $entry['id'],
                                 'notification_id' => $notification['id'],
+                                'notification_type' => 'delay',
                                 'config'          => serialize( array(
                                     'send' => $send_notif_delay['delay'],
                                     'data' => $send_notif_delay['delay_data'],
@@ -217,38 +218,21 @@ class GFDN_GravityForms {
 
                         //Add main notif
 
-                        $wpdb->insert(
-                            $wpdb->prefix . 'gfdn_notifs',
-                            array(
-                                'form_id'         => $entry['form_id'],
-                                'entry_id'        => $entry['id'],
-                                'notification_id' => $notification['id'],
-                                'config'          => serialize( array(
-                                    'send' => $send_notif_delay['delay'],
-                                    'data' => $send_notif_delay['delay_data']
-                                ) )
-                            )
-                        );
+                        foreach( $send_notif_delay['notifications'] as $send ) {
 
-                        //Add repeats notifs
-                        if( isset( $send_notif_delay['delay_data']['repeats'] ) && $send_notif_delay['delay_data']['repeats'] ) {
-
-                            foreach( $send_notif_delay['delay_data']['repeats'] as $repeat ) {
-
-                                $wpdb->insert(
-                                    $wpdb->prefix . 'gfdn_notifs',
-                                    array(
-                                        'form_id'         => $entry['form_id'],
-                                        'entry_id'        => $entry['id'],
-                                        'notification_id' => $notification['id'],
-                                        'config'          => serialize( array(
-                                            'send' => sprintf( '%s %s:%s:00 %s', $repeat['date'], $repeat['hour'], $repeat['minute'], $repeat['ampm'] ),
-                                            'data' => $send_notif_delay['delay_data']
-                                        ) )
-                                    )
-                                );
-
-                            }
+                            $wpdb->insert(
+                                $wpdb->prefix . 'gfdn_notifs',
+                                array(
+                                    'form_id'         => $entry['form_id'],
+                                    'entry_id'        => $entry['id'],
+                                    'notification_id' => $notification['id'],
+                                    'notification_type' => 'date',
+                                    'config'          => serialize( array(
+                                        'send' => $send,
+                                        'data' => array( 'type' => 'date' )
+                                    ) )
+                                )
+                            );
 
                         }
 
@@ -306,56 +290,78 @@ class GFDN_GravityForms {
                     $delay_data['repeats'] = $repeat_times;
                 }
 
+                return array(
+                    'delay'      => $delay,
+                    'delay_data' => $delay_data
+                );
+
             break;
             case 'date':
 
+                $notifications = array();
+
                 $delay_date = isset( $notification['delayDate'] ) && $notification['delayDate'] ? $notification['delayDate'] : 0;
-                $delay_hour = isset( $notification['delayHour'] ) && $notification['delayHour'] ? $notification['delayHour'] : 12;
-                $delay_min  = isset( $notification['delayMinute'] ) && $notification['delayMinute'] ? $notification['delayMinute'] : 0;
-                $delay_ampm = isset( $notification['delayAmPm'] ) && $notification['delayAmPm'] ? $notification['delayAmPm'] : 0;
+                $delay_hour = isset( $notification['delayHour'] ) && $notification['delayHour'] ? $notification['delayHour'] : '12';
+                $delay_min  = isset( $notification['delayMinute'] ) && $notification['delayMinute'] ? $notification['delayMinute'] : '00';
+                $delay_ampm = isset( $notification['delayAmPm'] ) && $notification['delayAmPm'] ? $notification['delayAmPm'] : '00';
 
                 if( $delay_date ) {
 
-                    $delay = sprintf( '%s %s:%s:00 %s', $delay_date, $delay_hour, $delay_min, $delay_ampm );
+                    $send = sprintf( '%s %s:%s:00 %s', $delay_date, $delay_hour, $delay_min, $delay_ampm );
 
-                    $delay_data = array(
-                        'type' => 'date',
-                        'date' => $delay_date,
-                        'hour' => $delay_hour,
-                        'min'  => $delay_min,
-                        'ampm' => $delay_ampm
-                    );
+                    $notifications[] = $send;
+                    // $delay_data = array(
+                    // $notifications[] = array(
+                    //     'type' => 'date',
+                    //     'send' => $send,
+                        // 'date' => $delay_date,
+                        // 'hour' => $delay_hour,
+                        // 'min'  => $delay_min,
+                        // 'ampm' => $delay_ampm
+                    // );
 
                 }
 
                 if( isset( $notification['delayRepeatDate'] ) && $notification['delayRepeatDate'] ) {
 
-                    $repeats = array();
+                    // $repeats = array();
                     foreach( $notification['delayRepeatDate'] as $i => $date ) {
 
-                        $repeats[] = array(
-                            'date'   => $date,
-                            'hour'   => isset( $notification['delayRepeatHour'][$i] ) && $notification['delayRepeatHour'][$i] ? $notification['delayRepeatHour'][$i] : '12',
-                            'minute' => isset( $notification['delayRepeatMinute'][$i] ) && $notification['delayRepeatMinute'][$i] ? $notification['delayRepeatMinute'][$i] : '00',
-                            'ampm'   => isset( $notification['delayRepeatAmPm'][$i] ) && $notification['delayRepeatAmPm'][$i] ? $notification['delayRepeatAmPm'][$i] : 'am'
-                        );
+                        $delay_date = $date;
+                        $delay_hour = isset( $notification['delayRepeatHour'][$i] ) && $notification['delayRepeatHour'][$i] ? $notification['delayRepeatHour'][$i] : '12';
+                        $delay_min  = isset( $notification['delayRepeatMinute'][$i] ) && $notification['delayRepeatMinute'][$i] ? $notification['delayRepeatMinute'][$i] : '00';
+                        $delay_ampm = isset( $notification['delayRepeatAmPm'][$i] ) && $notification['delayRepeatAmPm'][$i] ? $notification['delayRepeatAmPm'][$i] : 'am';
+
+                        $send = sprintf( '%s %s:%s:00 %s', $delay_date, $delay_hour, $delay_min, $delay_ampm );
+
+                        $notifications[] = $send;
+
+                        // $repeats[] = array(
+                        // $notifications[] = array(
+                        //     'type' => 'date',
+                        //     'send' => $send
+                            // 'date'   => $date,
+                            // 'hour'   => isset( $notification['delayRepeatHour'][$i] ) && $notification['delayRepeatHour'][$i] ? $notification['delayRepeatHour'][$i] : '12',
+                            // 'minute' => isset( $notification['delayRepeatMinute'][$i] ) && $notification['delayRepeatMinute'][$i] ? $notification['delayRepeatMinute'][$i] : '00',
+                            // 'ampm'   => isset( $notification['delayRepeatAmPm'][$i] ) && $notification['delayRepeatAmPm'][$i] ? $notification['delayRepeatAmPm'][$i] : 'am'
+                        // );
 
                     }
 
-                    if( $repeat && $repeats ) {
-                        $delay_data['repeats'] = $repeats;
-                    }
+                    // if( $repeat && $repeats ) {
+                    //     $delay_data['repeats'] = $repeats;
+                    // }
 
                 }
+
+                return array(
+                    'delay_data'    => array( 'type' => 'date' ),
+                    'notifications' => $notifications
+                );
 
             break;
 
         }
-
-        return array(
-            'delay'      => $delay,
-            'delay_data' => $delay_data
-        );
 
     }
 
@@ -364,11 +370,17 @@ class GFDN_GravityForms {
 	 *
 	 * @return array
 	 */
-    function get_scheduled_delayed_notification( $notification, $entry ) {
+    function get_scheduled_delayed_notification( $notification, $entry, $type = 'all' ) {
 
         global $wpdb;
 
-        return $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}gfdn_notifs WHERE form_id={$entry['form_id']} AND entry_id={$entry['id']} AND notification_id='{$notification['id']}'" );
+        $suffix = '';
+
+        if( $type != 'all' ) {
+            $suffix = " AND notification_type='{$type}'";
+        }
+
+        return $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}gfdn_notifs WHERE form_id={$entry['form_id']} AND entry_id={$entry['id']} AND notification_id='{$notification['id']}'" . $suffix );
 
     }
 

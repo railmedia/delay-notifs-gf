@@ -1,3 +1,7 @@
+<h4>1.2.2 - 06 September 2022</h4>
+<ul>
+    <li>Fix - If delayed and date notifications were active, the date notifs would also get rescheduled. Fixed by changing the way the plugin detects notifications in order to delete them is the time is past</li>
+</ul>
 <h4>1.2.1 - 05 September 2022</h4>
 <ul>
     <li>Various minor fixes applied</li>

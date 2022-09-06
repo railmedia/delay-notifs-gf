@@ -23,6 +23,7 @@ function gfdn_install() {
 		form_id INT(10),
         entry_id INT(10),
         notification_id VARCHAR(200),
+        notification_type VARCHAR(200),
         config LONGTEXT,
         datetime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (id)

@@ -82,6 +82,8 @@ class GFDN_Service {
     public static function send_notifications_cron() {
 
         $run = self::decide_run();
+        // echo $run;
+        // return;
 
         if( $run ) {
 
